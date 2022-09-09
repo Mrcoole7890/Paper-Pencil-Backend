@@ -2,41 +2,20 @@ var mysql = require('mysql');
 var express = require('express');
 var app = express();
 const cors = require('cors');
+const dotenv = require('dotenv');
 
-var con;
-var Host = "";
-var User = "";
-var Password = "";
-var Database = "";
 
+
+dotenv.config();
 app.use(cors());
 app.use(express.json());
 
-process.argv.forEach(function (val, index, array) {
 
-    switch(index) {
-        case 2: 
-            Host = val;
-            break;
-        case 3: 
-            User = val;
-            break;
-        case 4:
-            Password = val;
-            break;
-        case 5:
-            Database = val;
-    }
-
-    con = mysql.createConnection({
-        host: Host,
-        user: User,
-        password: Password,
-        database: Database
-      });
-
-    
-
+var con = mysql.createConnection({
+    host: process.env.Host,
+    user: process.env.User,
+    password: process.env.Password,
+    database: process.env.Database
 });
 
 con.query("CREATE TABLE IF NOT EXISTS users( userid int NOT NULL AUTO_INCREMENT, username VARCHAR(50) NOT NULL, password VARCHAR(256), PRIMARY KEY(userid) );");
