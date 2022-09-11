@@ -3,6 +3,7 @@ var express = require('express');
 var app = express();
 const cors = require('cors');
 const dotenv = require('dotenv');
+const jwt = require('jsonwebtoken');
 
 
 
@@ -30,6 +31,43 @@ app.post('/login', function(req, res) {
             console.log("User Found ( "+ res[0].username +" )");
         }
     });
+});
+
+app.post("/user/generateToken", (req, res) => {
+  
+    console.log("Request recived!")
+    let jwtSecretKey = process.env.JWT_SECRET_KEY;
+    let data = {
+        time: Date(),
+        userId: 12,
+    }
+  
+    const token = jwt.sign(data, jwtSecretKey);
+  
+    res.send( {generatedToken : token} );
+});
+
+app.get("/user/validateToken", (req, res) => {
+    // Tokens are generally passed in the header of the request
+    // Due to security reasons.
+  
+    let tokenHeaderKey = process.env.JWT_HEADER_SEC_KEY;
+    let jwtSecretKey = process.env.JWT_SECRET_KEY;
+  
+    try {
+        const token = req.header(tokenHeaderKey);
+  
+        const verified = jwt.verify(token, jwtSecretKey);
+        if(verified){
+            return res.send("Successfully Verified");
+        }else{
+            // Access Denied
+            return res.status(401).send(error);
+        }
+    } catch (error) {
+        // Access Denied
+        return res.status(401).send(error);
+    }
 });
 
 
