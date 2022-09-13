@@ -56,10 +56,9 @@ app.get("/user/validateToken", (req, res) => {
   
     try {
         const token = req.header(tokenHeaderKey);
-  
         const verified = jwt.verify(token, jwtSecretKey);
         if(verified){
-            return res.send("Successfully Verified");
+            return res.send({ "message" : "Successfully Verified" });
         }else{
             // Access Denied
             return res.status(401).send(error);
