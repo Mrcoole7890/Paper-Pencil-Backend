@@ -21,13 +21,28 @@ var con = mysql.createConnection({
 
 con.query("CREATE TABLE IF NOT EXISTS users( userid int NOT NULL AUTO_INCREMENT, username VARCHAR(50) NOT NULL, password VARCHAR(256), PRIMARY KEY(userid) );");
 
-app.post('/login', function(req, res) {
+app.post('/login', function(req, responce) {
     con.query("SELECT * FROM users WHERE username = ? and password = ?", [req.body.userName, req.body.password], function(err, res, fields) {
+        if (res.length == 0) {
+            if (err) return err;
+            responce.send({status : "UNotF"})
+            console.log("User Not Found!");
+        }
+        else {
+            console.log("User Found ( "+ res[0].username +" )");
+        }
+    });
+});
+
+app.post('/register', function(req, responce) {
+    con.query("SELECT * FROM users WHERE username = ?", [req.body.userName, req.body.password], function(err, res, fields) {
         if (res.length == 0) con.query("INSERT INTO users (username, password) VALUES ( ? , ? )", [req.body.userName, req.body.password], function(err, res){
             if (err) return err;
+            responce.send({status : "Accepted"});
             console.log("Added user ( " + req.body.userName + " ) to table.");
         });
         else {
+            responce.send({status : "USInUse"})
             console.log("User Found ( "+ res[0].username +" )");
         }
     });
