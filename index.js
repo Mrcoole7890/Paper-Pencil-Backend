@@ -29,6 +29,7 @@ app.post('/login', function(req, responce) {
             console.log("User Not Found!");
         }
         else {
+            responce.send({status : "Good"})
             console.log("User Found ( "+ res[0].username +" )");
         }
     });
