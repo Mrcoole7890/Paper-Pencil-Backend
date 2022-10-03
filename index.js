@@ -20,6 +20,11 @@ var con = mysql.createConnection({
 });
 
 con.query("CREATE TABLE IF NOT EXISTS users( userid int NOT NULL AUTO_INCREMENT, username VARCHAR(50) NOT NULL, password VARCHAR(256), PRIMARY KEY(userid) );");
+con.query("CREATE TABLE IF NOT EXISTS base( baseid int NOT NULL AUTO_INCREMENT, playerid int NOT NULL,"
+          + " FOREIGN KEY (playerid) REFERENCES users(userid) ON DELETE CASCADE, PRIMARY KEY(baseid)  );");
+con.query("CREATE TABLE IF NOT EXISTS clan( clanid int NOT NULL AUTO_INCREMENT, playerid int NOT NULL,"
+          + " clanname varchar(100) NOT NULL,"
+          + " FOREIGN KEY (playerid) REFERENCES users(userid) ON DELETE CASCADE, PRIMARY KEY(clanid)  );");
 
 app.post('/login', function(req, responce) {
     con.query("SELECT * FROM users WHERE username = ? and password = ?", [req.body.userName, req.body.password], function(err, res, fields) {
