@@ -5,7 +5,23 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const jwt = require('jsonwebtoken');
 
-
+let parseToken = function(req, res){
+    let tokenHeaderKey = process.env.JWT_HEADER_SEC_KEY;
+    let jwtSecretKey = process.env.JWT_SECRET_KEY;
+  
+    try {
+        const token = req.header(tokenHeaderKey);
+        console.log(token)
+        const verified = jwt.verify(token, jwtSecretKey);
+        if(verified){
+            return verified;
+        }else{
+            return {'status':403};
+        }
+    } catch (error) {
+        return {'status':403};
+    }
+}
 
 dotenv.config();
 app.use(cors());
@@ -34,7 +50,7 @@ app.post('/login', function(req, responce) {
             console.log("User Not Found!");
         }
         else {
-            responce.send({status : "Good"})
+            responce.send({status : "Good", token: generateToken(JSON.stringify(res[0]))})
             console.log("User Found ( "+ res[0].username +" )");
         }
     });
@@ -54,41 +70,20 @@ app.post('/register', function(req, responce) {
     });
 });
 
-app.post("/user/generateToken", (req, res) => {
-  
-    console.log("Request recived!")
-    let jwtSecretKey = process.env.JWT_SECRET_KEY;
-    let data = {
-        time: Date(),
-        userId: 12,
-    }
-  
-    const token = jwt.sign(data, jwtSecretKey);
-  
-    res.send( {generatedToken : token} );
+app.post("/user", (req, res) => {
+    let data = parseToken(req,res);
+    res.send(data);
 });
 
-app.get("/user/validateToken", (req, res) => {
-    // Tokens are generally passed in the header of the request
-    // Due to security reasons.
-  
-    let tokenHeaderKey = process.env.JWT_HEADER_SEC_KEY;
+function generateToken(obj) {
     let jwtSecretKey = process.env.JWT_SECRET_KEY;
-  
-    try {
-        const token = req.header(tokenHeaderKey);
-        const verified = jwt.verify(token, jwtSecretKey);
-        if(verified){
-            return res.send({ "message" : "Successfully Verified" });
-        }else{
-            // Access Denied
-            return res.status(401).send(error);
-        }
-    } catch (error) {
-        // Access Denied
-        return res.status(401).send(error);
-    }
-});
+    const token = jwt.sign(obj, jwtSecretKey);
+    return token;
+}
+
+
 
 
 app.listen(8081);
+
+
