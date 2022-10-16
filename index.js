@@ -35,12 +35,35 @@ var con = mysql.createConnection({
     database: process.env.Database
 });
 
-con.query("CREATE TABLE IF NOT EXISTS users( userid int NOT NULL AUTO_INCREMENT, username VARCHAR(50) NOT NULL, password VARCHAR(256), PRIMARY KEY(userid) );");
-con.query("CREATE TABLE IF NOT EXISTS base( baseid int NOT NULL AUTO_INCREMENT, playerid int NOT NULL,"
-          + " FOREIGN KEY (playerid) REFERENCES users(userid) ON DELETE CASCADE, PRIMARY KEY(baseid)  );");
-con.query("CREATE TABLE IF NOT EXISTS clan( clanid int NOT NULL AUTO_INCREMENT, playerid int NOT NULL,"
-          + " clanname varchar(100) NOT NULL,"
-          + " FOREIGN KEY (playerid) REFERENCES users(userid) ON DELETE CASCADE, PRIMARY KEY(clanid)  );");
+con.query("CREATE TABLE IF NOT EXISTS users("
+    + "userid int NOT NULL AUTO_INCREMENT,"
+    + "username VARCHAR(50) NOT NULL,"
+    + "password VARCHAR(256),"
+    + "PRIMARY KEY(userid));");
+
+con.query("CREATE TABLE IF NOT EXISTS base("
+    + "baseid int NOT NULL AUTO_INCREMENT,"
+    + "playerid int NOT NULL,"
+    + "size int NOT NULL,"
+    + "location varchar(10),"
+    + "FOREIGN KEY (playerid) REFERENCES users(userid),"
+    + "PRIMARY KEY(baseid));");
+
+con.query("CREATE TABLE IF NOT EXISTS clan("
+    + "clanid int NOT NULL AUTO_INCREMENT,"
+    + "playerid int NOT NULL,"
+    + "clanname varchar(100) NOT NULL,"
+    + "FOREIGN KEY (playerid) REFERENCES users(userid),"
+    + "PRIMARY KEY(clanid));");
+
+con.query("CREATE TABLE IF NOT EXISTS member("
+    + "memberid int NOT NULL AUTO_INCREMENT,"
+    + "playerid int NOT NULL,"
+    + "membername VARCHAR(50) NOT NULL,"
+    + "health int NOT NULL,"
+    + "quality int NOT NULL,"
+    + "FOREIGN KEY (playerid) REFERENCES users(userid),"
+    + "PRIMARY KEY(memberid));");
 
 app.post('/login', function(req, responce) {
     con.query("SELECT * FROM users WHERE username = ? and password = ?", [req.body.userName, req.body.password], function(err, res, fields) {
@@ -81,9 +104,43 @@ function generateToken(obj) {
     return token;
 }
 
+function generateMockData() {
+    addPlayer("TestMan", "TestPass");
+    addBase(1, 2, "1,9");
+    addClan(1, "xXSwagClanXx");
+    addMember(1, "Juicer", 2);
+}
+
+function addPlayer(username, password) {
+    con.query("INSERT INTO users (username, password) VALUES ( ? , ? )", [username, password], function(err, res){
+        if (err) return console.log(err);
+        console.log("Added user ( " + username + " ) to table.");
+    });
+}
+
+function addBase(userid, size, location) {
+    con.query("INSERT INTO base (playerid, size, location) VALUES ( ?, ?, ? )", [userid, size, location], function(err, res){
+        if (err) return console.log(err);
+        console.log("Added base to table.");
+    });
+}
+
+function addClan(userid, clanName) {
+    con.query("INSERT INTO clan (playerid, clanname) VALUES ( ?, ? )", [userid, clanName], function(err, res){
+        if (err) return console.log(err);
+        console.log("Added clan to table.");
+    });
+}
+
+function addMember(userid, name, quality) {
+    con.query("INSERT INTO member (playerid, membername, quality, health) VALUES ( ?, ?, ?, 100 )", [userid, name, quality], function(err, res){
+        if (err) return console.log(err);
+        console.log("Added member to table.");
+    });
+}
 
 
-
+generateMockData();
 app.listen(8081);
 
 
