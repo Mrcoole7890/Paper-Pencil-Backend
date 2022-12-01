@@ -10,7 +10,6 @@ dotenv.config();
 app.use(cors());
 app.use(express.json());
 
-
 var con = mysql.createConnection({
     host: process.env.Host,
     user: process.env.User,
@@ -81,18 +80,75 @@ app.post('/register', function(req, responce) {
 
 app.post("/user", (req, res) => {
     let data = parseToken(req,res);
-    res.send(data);
+    getUser(data.username).then((dbResults) => {
+        console.log(dbResults);
+        if (dbResults.length == 0) {
+            if (err) return err;
+            res.send({status : "UNotF"})
+            console.log("User Not Found!");
+        }
+        else {
+            res.send({status : "Good", username : dbResults[0].username});
+            console.log("Clan Found ( "+ dbResults[0] +" )");
+        }
+    });
 });
 
-app.get("/clan", (req,res) =>{
-    let data = parseToken(req,res);
-    console.log(data);
+app.post("/clan", (req,res) =>{
+  let data = parseToken(req,res);
+  getClan(data.userid).then((dbResults) => {
+      console.log(dbResults);
+      if (dbResults.length == 0) {
+          if (err) return err;
+          res.send({status : "UNotF"})
+          console.log("User Not Found!");
+      }
+      else {
+          res.send({status : "Good", clanName : dbResults[0].clanname});
+          console.log("Clan Found ( "+ dbResults[0] +" )");
+      }
+  });
+});
+
+app.post("/base", (req,res) =>{
+  let data = parseToken(req,res);
+  getBase(data.userid).then((dbResults) => {
+      console.log(dbResults);
+      if (dbResults.length == 0) {
+          if (err) return err;
+          res.send({status : "UNotF"})
+          console.log("Base Not Found!");
+      }
+      else {
+          res.send({status : "Good", size : dbResults[0].size, location: dbResults[0].location});
+          console.log("Base Found ( "+ dbResults[0] +" )");
+      }
+  });
+});
+
+app.post("/memebers", (req,res) =>{
+  let data = parseToken(req,res);
+  getMembers(data.userid).then((dbResults) => {
+      console.log(dbResults);
+      if (dbResults.length == 0) {
+          if (err) return err;
+          res.send({status : "UNotF"})
+          console.log("Memebers Not Found!");
+      }
+      else {
+          res.send({status : "Good", memebers: dbResults});
+          dbResults.forEach((item, i) => {
+            console.log("Memebers Found ( "+ item.membername +" )");
+          });
+
+
+      }
+  });
 });
 
 let parseToken = function(req, res){
     let tokenHeaderKey = process.env.JWT_HEADER_SEC_KEY;
     let jwtSecretKey = process.env.JWT_SECRET_KEY;
-  
     try {
         const token = req.header(tokenHeaderKey);
         const verified = jwt.verify(token, jwtSecretKey);
@@ -113,10 +169,28 @@ function generateToken(obj) {
 }
 
 function generateMockData() {
-    addPlayer("TestMan", "TestPass");
+    addPlayer("TestMan1", "TestPass");
+    addPlayer("TestMan2", "TestPass");
+    addPlayer("TestMan3", "TestPass");
+    addPlayer("TestMan4", "TestPass");
+
     addBase(1, 2, "1,9");
+    addBase(2, 1, "1,9");
+    addBase(3, 3, "1,9");
+    addBase(4, 4, "1,9");
+
     addClan(1, "xXSwagClanXx");
+    addClan(2, "$Lay3rs");
+    addClan(3, "OneHunna");
+    addClan(4, "GameOver");
+
     addMember(1, "Juicer", 2);
+    addMember(2, "Looter", 2);
+    addMember(3, "Shooter", 2);
+    addMember(2, "Miner", 2);
+    addMember(3, "Grinder", 2);
+    addMember(1, "Builder", 2);
+    addMember(4, "Cole", 2);
 }
 
 function addPlayer(username, password) {
@@ -149,8 +223,8 @@ function addMember(userid, name, quality) {
 
 function getClan(userid) {
     return new Promise((resolve, reject) => {
-        var queryStr = 
-        "Select clanname " + 
+        var queryStr =
+        "Select clanname " +
         "from clan " +
         "Where playerid = ?";
 
@@ -167,8 +241,8 @@ function getClan(userid) {
 
 function getMembers(playerid) {
     return new Promise((resolve, reject) => {
-        var queryStr = 
-        "Select membername " + 
+        var queryStr =
+        "Select membername, health, quality " +
         "from member " +
         "Where playerid = ?";
 
@@ -180,13 +254,13 @@ function getMembers(playerid) {
                 resolve(rows);
             }
         });
-    });  
+    });
 }
 
 function getUser(username) {
     return new Promise((resolve, reject) => {
-        var queryStr = 
-        "Select userid, username " + 
+        var queryStr =
+        "Select userid, username " +
         "from users " +
         "Where username = ?";
 
@@ -198,8 +272,26 @@ function getUser(username) {
                 resolve(rows);
             }
         });
-    });  
+    });
 }
 
-generateMockData();
+function getBase(playerid) {
+    return new Promise((resolve, reject) => {
+        var queryStr =
+        "Select * " +
+        "from base " +
+        "Where playerid = ?";
+
+        var queryVar = [playerid];
+
+        con.query(queryStr, queryVar, function(err, rows, fields){
+            if (err) reject(err);
+            else {
+                resolve(rows);
+            }
+        });
+    });
+}
+
+//generateMockData();
 app.listen(8081);
