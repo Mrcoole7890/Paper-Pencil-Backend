@@ -4,7 +4,8 @@ var app = express();
 const cors = require('cors');
 const dotenv = require('dotenv');
 const jwt = require('jsonwebtoken');
-
+const userModel = require("./models/user-model.js");
+const userService = require("./services/user-service.js");
 
 dotenv.config();
 app.use(cors());
@@ -48,50 +49,37 @@ con.query("CREATE TABLE IF NOT EXISTS member("
     + "PRIMARY KEY(memberid));");
 
 app.post('/login', function(req, responce) {
-
-    getUser(req.body.userName).then((dbResults) => {
-        console.log(dbResults);
-        if (dbResults.length == 0) {
-            if (err) return err;
-            responce.send({status : "UNotF"})
+    let user = new userModel.user(null, req.body.username, req.body.password);
+    userService.getUserByUsernamePassword(user, con).then((dbResults) => {
+        if (dbResults == null) {
+            responce.send({status : "UNotF"});
             console.log("User Not Found!");
         }
         else {
-            responce.send({status : "Good", token: generateToken(JSON.stringify(dbResults[0]))})
-            console.log("User Found ( "+ dbResults[0].userid +" )");
+            responce.send({status : "Good", token: generateToken(JSON.stringify(dbResults))});
+            console.log("User Found ( "+ dbResults.username +" )");
         }
     });
 
 });
 
 app.post('/register', function(req, responce) {
-    con.query("SELECT * FROM users WHERE username = ?", [req.body.userName, req.body.password], function(err, res, fields) {
-        if (res.length == 0) con.query("INSERT INTO users (username, password) VALUES ( ? , ? )", [req.body.userName, req.body.password], function(err, res){
-            if (err) return err;
-            responce.send({status : "Accepted"});
-            console.log("Added user ( " + req.body.userName + " ) to table.");
-        });
-        else {
-            responce.send({status : "USInUse"})
-            console.log("User Found ( "+ res[0].username +" )");
-        }
-    });
+  let us = new userModel.user(null, req.body.username, req.body.password);
+  if (!userService.isUserNameTaken(us, con)) {
+    userService.addUser(us, con);
+    responce.send({status : "Good"});
+  }
+  else responce.send({status : "USInUse"});
 });
 
 app.post("/user", (req, res) => {
     let data = parseToken(req,res);
-    getUser(data.username).then((dbResults) => {
-        console.log(dbResults);
-        if (dbResults.length == 0) {
-            if (err) return err;
-            res.send({status : "UNotF"})
-            console.log("User Not Found!");
-        }
-        else {
-            res.send({status : "Good", username : dbResults[0].username});
-            console.log("Clan Found ( "+ dbResults[0] +" )");
-        }
+    userService.getUser(data.username, con).then(dbResults => {
+      us = new userModel.user(dbResults.userid, dbResults.username, null);
+      console.log(us);
+      res.send({status:"Good", username: us.username});
     });
+
 });
 
 app.post("/clan", (req,res) =>{
@@ -99,7 +87,6 @@ app.post("/clan", (req,res) =>{
   getClan(data.userid).then((dbResults) => {
       console.log(dbResults);
       if (dbResults.length == 0) {
-          if (err) return err;
           res.send({status : "UNotF"})
           console.log("User Not Found!");
       }
@@ -115,7 +102,6 @@ app.post("/base", (req,res) =>{
   getBase(data.userid).then((dbResults) => {
       console.log(dbResults);
       if (dbResults.length == 0) {
-          if (err) return err;
           res.send({status : "UNotF"})
           console.log("Base Not Found!");
       }
@@ -131,7 +117,6 @@ app.post("/memebers", (req,res) =>{
   getMembers(data.userid).then((dbResults) => {
       console.log(dbResults);
       if (dbResults.length == 0) {
-          if (err) return err;
           res.send({status : "UNotF"})
           console.log("Memebers Not Found!");
       }
